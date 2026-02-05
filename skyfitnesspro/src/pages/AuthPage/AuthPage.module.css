@@ -1,0 +1,126 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.08);
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+.card {
+  position: relative;
+  width: 420px;
+  max-width: calc(100vw - 40px);
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.22);
+  padding: 22px;
+}
+
+.logoRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.logoText {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.title {
+  font-weight: 700;
+  margin: 12px 0 12px;
+}
+
+.commonError {
+  margin-bottom: 10px;
+  color: #c20000;
+  font-size: 13px;
+}
+
+.fields {
+  display: grid;
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.input {
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #e3e3e3;
+  padding: 0 12px;
+  outline: none;
+  background: #fff;
+}
+
+.input:focus {
+  border-color: #c6ff00;
+}
+
+.inputError {
+  border-color: #e23b3b;
+}
+
+.errorText {
+  font-size: 12px;
+  color: #e23b3b;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.primaryBtn {
+  height: 44px;
+  border-radius: 999px;
+  border: 0;
+  background: #c6ff00;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primaryBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.secondaryBtn {
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid #111;
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+@media (max-width: 520px) {
+  .container {
+    padding: 18px 16px 48px;
+    max-width: 375px;
+  }
+
+  .card {
+    width: 320px;
+    max-width: calc(100vw - 32px);
+    border-radius: 22px;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}

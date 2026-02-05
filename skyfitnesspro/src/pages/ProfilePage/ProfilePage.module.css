@@ -1,0 +1,301 @@
+.page {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111;
+}
+
+.container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.userCard {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+  padding: 18px;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 28px;
+}
+
+.userAvatar {
+  width: 92px;
+  height: 92px;
+  border-radius: 14px;
+  background: #e6e6e6;
+}
+
+.userInfo {
+  flex: 1;
+}
+
+.userName {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.userLogin {
+  margin-top: 6px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.logoutBtn {
+  margin-top: 12px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #111;
+  background: #fff;
+  cursor: pointer;
+}
+
+.subTitle {
+  font-size: 22px;
+  font-weight: 800;
+  margin: 0 0 14px 0;
+}
+
+.empty {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+}
+
+.link {
+  color: #111;
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.cardTop {
+  position: relative;
+}
+
+.cardImg {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  display: block;
+}
+
+.removeBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  color: #111;
+  font-weight: 900;
+  font-size: 18px;
+  line-height: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+}
+
+.cardBody {
+  padding: 14px;
+}
+
+.cardTitle {
+  font-size: 22px;
+  font-weight: 900;
+  margin-bottom: 10px;
+}
+
+.metaRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.metaPill {
+  font-size: 12px;
+  background: #efefef;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.progressRow {
+  margin-top: 10px;
+}
+
+.progressText {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-bottom: 8px;
+}
+
+.progressLine {
+  height: 3px;
+  border-radius: 99px;
+  background: #00c2ff;
+  width: 100%;
+}
+
+.startBtn {
+  margin-top: 12px;
+  width: 100%;
+  height: 40px;
+  border-radius: 999px;
+  border: none;
+  background: #c6ff00;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.loading {
+  padding: 60px 24px;
+}
+
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 28px;
+    margin-bottom: 12px;
+  }
+
+  .userCard {
+    border-radius: 18px;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .userAvatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+  }
+
+  .userName {
+    font-size: 16px;
+  }
+
+  .userLogin {
+    font-size: 12px;
+  }
+
+  .logoutBtn {
+    height: 34px;
+    padding: 0 14px;
+    font-size: 14px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .card {
+    border-radius: 18px;
+  }
+
+  .cardTop {
+    border-radius: 18px 18px 0 0;
+  }
+
+  .cardImg {
+    border-radius: 18px 18px 0 0;
+  }
+
+  .startBtn {
+    height: 44px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .container {
+    padding: 14px;
+  }
+
+  .metaPill {
+    font-size: 12px;
+  }
+}
+@media (max-width: 520px) {
+  .container {
+    padding: 18px 16px 48px;
+    max-width: 375px;
+  }
+
+  .title {
+    font-size: 26px;
+  }
+
+ 
+  .userCard {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .logoutBtn {
+    width: 100%;
+  }
+
+  
+  .grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .card {
+    border-radius: 22px;
+  }
+
+  .cardTop {
+    height: 180px;
+  }
+
+  .startBtn {
+    width: 100%;
+  }
+
+  .removeBtn {
+    width: 28px;
+    height: 28px;
+  }
+}

@@ -1,0 +1,20 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  padding: 16px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.main {
+  flex: 1;
+  padding: 16px;
+}
+
+.footer {
+  padding: 16px;
+  border-top: 1px solid #e5e5e5;
+}

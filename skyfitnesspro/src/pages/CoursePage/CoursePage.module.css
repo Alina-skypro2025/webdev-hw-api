@@ -1,0 +1,429 @@
+.page {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111;
+}
+
+.container {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #111;
+  text-decoration: none;
+  font-size: 16px;
+  margin: 0 0 22px;
+}
+
+.backIcon {
+  font-size: 18px;
+  line-height: 1;
+}
+
+
+.card {
+  background: #fff;
+  border-radius: 36px;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.08);
+  padding: 26px 26px 30px;
+}
+
+
+.hero {
+  position: relative;
+  border-radius: 28px;
+  height: 260px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  padding: 34px;
+  margin-bottom: 26px;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--hero-bg, transparent);
+  opacity: var(--hero-overlay, 0);
+  pointer-events: none;
+}
+
+.heroTitle {
+  position: relative;
+  z-index: 2;
+  font-size: 56px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.heroImg {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: 52%;
+  object-fit: cover;
+  object-position: right center;
+  z-index: 1;
+}
+
+
+.sectionTitle {
+  font-size: 44px;
+  line-height: 1.05;
+  font-weight: 800;
+  margin: 22px 0 18px;
+  letter-spacing: -0.02em;
+}
+
+
+.reasons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin: 0 0 14px;
+}
+
+.reason {
+  background: linear-gradient(180deg, #101827 0%, #0b1220 100%);
+  border-radius: 18px;
+  padding: 18px 20px;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 14px;
+  align-items: center;
+  min-height: 90px;
+}
+
+.reasonNum {
+  color: #b7f000;
+  font-weight: 900;
+  font-size: 32px;
+  line-height: 1;
+}
+
+.reasonText {
+  color: #fff;
+  font-size: 14px;
+  line-height: 18px;
+  font-weight: 600;
+  opacity: 0.95;
+}
+
+
+.directions {
+  background: #b7f000;
+  border-radius: 16px;
+  padding: 18px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 18px;
+}
+
+.directionItem {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.directionDot {
+  font-size: 14px;
+  line-height: 1;
+}
+
+
+.bigCard {
+  margin-top: 26px;
+  background: #fff;
+  border-radius: 36px;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.08);
+  padding: 28px;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 18px;
+  align-items: center;
+}
+
+.bigLeft {
+  padding: 10px;
+}
+
+.bigTitle {
+  margin: 0 0 14px;
+  font-size: 44px;
+  line-height: 1.05;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.bigList {
+  margin: 0 0 18px;
+  padding-left: 18px;
+  color: #6b7280;
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.bigBtn {
+  border: none;
+  background: #b7f000;
+  color: #111;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.bigBtn:active {
+  transform: scale(0.97);
+}
+
+.bigBtnAdded {
+  background-color: #d9d9d9;
+  color: #555;
+  cursor: default;
+  box-shadow: none;
+}
+
+.bigRight {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 320px;
+}
+
+.manImg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+}
+
+.bottomCopyright {
+  margin-top: 18px;
+  opacity: 0.7;
+  padding-left: 2px;
+}
+
+
+.notFound {
+  background: #fff;
+  border-radius: 26px;
+  box-shadow: 0 18px 35px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  max-width: 720px;
+  margin: 60px auto 0;
+}
+
+.notFoundTitle {
+  font-size: 20px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.backLink {
+  color: #111;
+}
+
+.footer {
+  border-top: 1px solid #eaeaea;
+  padding: 16px 24px;
+  background: #fff;
+  margin-top: 60px;
+}
+
+.footerInner {
+  max-width: 1160px;
+  margin: 0 auto;
+  opacity: 0.8;
+}
+
+
+@media (max-width: 980px) {
+  .reasons {
+    grid-template-columns: 1fr;
+  }
+
+  .directions {
+    grid-template-columns: 1fr;
+  }
+
+  .bigCard {
+    grid-template-columns: 1fr;
+  }
+
+  .hero {
+    height: 240px;
+  }
+
+  .heroImg {
+    width: 60%;
+  }
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 32px 16px 64px;
+  }
+
+  .heroTitle {
+    font-size: 40px;
+  }
+
+  .sectionTitle {
+    font-size: 34px;
+  }
+
+  .bigTitle {
+    font-size: 34px;
+  }
+
+  .heroImg {
+    width: 70%;
+  }
+}
+
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+
+  .back {
+    margin-bottom: 12px;
+  }
+
+  .card {
+    border-radius: 18px;
+  }
+
+  .hero {
+    border-radius: 18px;
+    min-height: 160px;
+  }
+
+  .heroTitle {
+    font-size: 28px;
+  }
+
+  .sectionTitle {
+    font-size: 18px;
+    margin-top: 16px;
+  }
+
+  .reasons {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .reason {
+    border-radius: 14px;
+    grid-template-columns: 28px 1fr;
+  }
+
+  .directions {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .bigCard {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    border-radius: 18px;
+    padding: 14px;
+  }
+
+  .bigTitle {
+    font-size: 28px;
+    line-height: 1.1;
+  }
+
+  .bigBtn {
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .manImg {
+    max-height: 240px;
+    object-fit: contain;
+  }
+}
+
+@media (max-width: 420px) {
+  .heroTitle {
+    font-size: 24px;
+  }
+
+  .bigTitle {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .container {
+    padding: 18px 16px 48px;
+    max-width: 375px;
+  }
+
+  .back {
+    margin-bottom: 12px;
+  }
+
+  .card {
+    border-radius: 22px;
+  }
+
+  .hero {
+    border-radius: 22px;
+    overflow: hidden;
+  }
+
+  .heroTitle {
+    font-size: 26px;
+  }
+
+  .reasons {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .directions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .bigCard {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .bigRight {
+    order: 2;
+  }
+
+  .manImg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .bigBtn {
+    width: 100%;
+  }
+}
