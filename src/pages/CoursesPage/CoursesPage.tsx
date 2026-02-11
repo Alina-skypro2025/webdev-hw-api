@@ -63,6 +63,12 @@ function IconSignal() {
   );
 }
 
+interface AdaptedCourse extends Course {
+  _id: string;
+  originalId: string;
+  title: string;
+}
+
 export function CoursesPage() {
   const navigate = useNavigate();
 
@@ -92,17 +98,42 @@ export function CoursesPage() {
     []
   );
 
+  const nameToIdMap = useMemo<Record<string, string>>(
+    () => ({
+      Yoga: "yoga",
+      Stretching: "stretching",
+      Fitness: "fitness",
+      StepAirobic: "stepaerobics",
+      BodyFlex: "bodyflex",
+    }),
+    []
+  );
+
   useEffect(() => {
     getCourses()
-      .then((data) => setCourses(data))
+      .then((data) => {
+        setCourses(data);
+      })
       .catch((e) => setError(e?.message || "Ошибка загрузки"))
       .finally(() => setLoading(false));
   }, []);
 
-  const filteredCourses = useMemo(() => {
-    const allowed = new Set(["yoga", "stretching", "fitness", "stepaerobics", "bodyflex"]);
-    return courses.filter((c) => allowed.has(c._id));
-  }, [courses]);
+  const adaptedCourses = useMemo<AdaptedCourse[]>(() => {
+    return courses
+      .filter((course) => {
+        const mappedId = nameToIdMap[course.nameEN];
+        return mappedId && imagesById[mappedId];
+      })
+      .map((course) => {
+        const mappedId = nameToIdMap[course.nameEN];
+        return {
+          ...course,
+          _id: mappedId,
+          originalId: course._id || course.id,
+          title: course.nameRU,
+        } as AdaptedCourse;
+      });
+  }, [courses, nameToIdMap, imagesById]);
 
   function onPlusClick(e: React.MouseEvent, courseId: string) {
     e.preventDefault();
@@ -115,7 +146,10 @@ export function CoursesPage() {
       return;
     }
 
-    addMyCourse(userKey, courseId);
+    const course = adaptedCourses.find((c) => c._id === courseId);
+    const idToSave = course?.originalId || courseId;
+    
+    addMyCourse(userKey, idToSave);
     navigate("/profile");
   }
 
@@ -141,12 +175,12 @@ export function CoursesPage() {
         </section>
 
         <section className={styles.grid}>
-          {filteredCourses.map((c) => {
+          {adaptedCourses.map((c) => {
             const img = imagesById[c._id];
             const bg = bgById[c._id] ?? "#e9ecef";
 
             return (
-              <Link key={c._id} to={`/course/${c._id}`} className={styles.card}>
+              <Link key={c._id} to={`/course/${c.originalId || c._id}`} className={styles.card}>
                 <div className={styles.cardImageWrap} style={{ background: bg }}>
                   {img ? <img src={img} alt={c.title} className={styles.cardImage} /> : null}
 
@@ -163,16 +197,15 @@ export function CoursesPage() {
 
                 <div className={styles.cardBody}>
                   <div className={styles.cardTitle}>{c.title}</div>
-                  <div className={styles.cardDesc}>{c.description}</div>
 
                   <div className={styles.badges}>
                     <span className={styles.badge}>
                       <IconCalendar />
-                      25 дней
+                      {c.durationInDays || 25} дней
                     </span>
                     <span className={styles.badge}>
                       <IconClock />
-                      20-50 мин/день
+                      {c.dailyDurationInMinutes?.from || 20}-{c.dailyDurationInMinutes?.to || 50} мин/день
                     </span>
                     <span className={styles.badge}>
                       <IconSignal />
@@ -195,8 +228,6 @@ export function CoursesPage() {
           </button>
         </div>
       </main>
-
-      
     </div>
   );
 }

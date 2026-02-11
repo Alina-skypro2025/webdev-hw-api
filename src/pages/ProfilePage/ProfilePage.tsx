@@ -6,20 +6,22 @@ import { getCourses, type Course } from "../../shared/api/courses";
 import { getUser, clearAuth } from "../../shared/lib/auth";
 import { getMyCourseIds, removeMyCourse } from "../../shared/lib/myCourses";
 
-
-
 import yogaImg from "../../shared/assets/courses/Yoga.jpg";
 import stretchingImg from "../../shared/assets/courses/Stretching.jpg";
 import fitnessImg from "../../shared/assets/courses/Fitness.jpg";
 import stepImg from "../../shared/assets/courses/Stepaerobics.jpg";
 import bodyflexImg from "../../shared/assets/courses/Bodyflex.jpg";
 
+interface AdaptedCourse extends Course {
+  _id: string;
+  originalId: string;
+  title: string;
+}
+
 export function ProfilePage() {
   const navigate = useNavigate();
-
   const user = getUser();
   const userKey = user?.email || user?.login || user?.username || "";
-
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [tick, setTick] = useState(0);
@@ -46,6 +48,17 @@ export function ProfilePage() {
     []
   );
 
+  const nameToIdMap = useMemo<Record<string, string>>(
+    () => ({
+      Yoga: "yoga",
+      Stretching: "stretching",
+      Fitness: "fitness",
+      StepAirobic: "stepaerobics",
+      BodyFlex: "bodyflex",
+    }),
+    []
+  );
+
   useEffect(() => {
     if (!userKey) {
       navigate("/login?mode=login", { replace: true });
@@ -53,7 +66,13 @@ export function ProfilePage() {
     }
 
     getCourses()
-      .then((data) => setAllCourses(data))
+      .then((data) => {
+        const adapted = data.map((course) => ({
+          ...course,
+          _id: course._id || course.id,
+        }));
+        setAllCourses(adapted);
+      })
       .catch(() => setAllCourses([]))
       .finally(() => setLoading(false));
   }, [navigate, userKey]);
@@ -63,14 +82,26 @@ export function ProfilePage() {
     return getMyCourseIds(userKey);
   }, [userKey, tick]);
 
-  const myCourses = useMemo(() => {
+  const myCourses = useMemo<AdaptedCourse[]>(() => {
     const setIds = new Set(myCourseIds);
-    return allCourses.filter((c) => setIds.has(c._id));
-  }, [allCourses, myCourseIds]);
+    return allCourses
+      .filter((c) => setIds.has(c._id || c.id))
+      .map((course) => {
+        const mappedId = nameToIdMap[course.nameEN] || course._id || course.id;
+        return {
+          ...course,
+          _id: mappedId,
+          originalId: course._id || course.id,
+          title: course.nameRU,
+        } as AdaptedCourse;
+      });
+  }, [allCourses, myCourseIds, nameToIdMap]);
 
   function onRemove(courseId: string) {
     if (!userKey) return;
-    removeMyCourse(userKey, courseId);
+    const course = myCourses.find((c) => c._id === courseId);
+    const idToRemove = course?.originalId || courseId;
+    removeMyCourse(userKey, idToRemove);
     setTick((v) => v + 1);
   }
 
@@ -80,13 +111,10 @@ export function ProfilePage() {
   }
 
   if (loading) return <div className={styles.loading}>Загрузка...</div>;
-  
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-
-        
         <Link to="/" className={styles.back}>
           <span className={styles.backIcon}>←</span> Назад к списку курсов
         </Link>
@@ -102,7 +130,6 @@ export function ProfilePage() {
               {user?.name || user?.login || "Пользователь"}
             </div>
             <div className={styles.userLogin}>Логин: {userKey}</div>
-
             <button className={styles.logoutBtn} type="button" onClick={onLogout}>
               Выйти
             </button>
@@ -135,13 +162,16 @@ export function ProfilePage() {
                         alt={course.title}
                       />
                     ) : null}
-
                     <button
                       type="button"
                       className={styles.removeBtn}
                       aria-label="Удалить курс"
                       title="Удалить курс"
-                      onClick={() => onRemove(course._id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onRemove(course._id);
+                      }}
                     >
                       −
                     </button>
@@ -151,14 +181,19 @@ export function ProfilePage() {
                     <div className={styles.cardTitle}>{course.title}</div>
 
                     <div className={styles.metaRow}>
-                      <span className={styles.metaPill}>25 дней</span>
                       <span className={styles.metaPill}>
-                        20-50 мин/день
+                        {course.durationInDays || 25} дней
+                      </span>
+                      <span className={styles.metaPill}>
+                        {course.dailyDurationInMinutes?.from || 20}-
+                        {course.dailyDurationInMinutes?.to || 50} мин/день
                       </span>
                     </div>
 
                     <div className={styles.metaRow}>
-                      <span className={styles.metaPill}>Сложность</span>
+                      <span className={styles.metaPill}>
+                        Сложность
+                      </span>
                     </div>
 
                     <div className={styles.progressRow}>
@@ -171,9 +206,12 @@ export function ProfilePage() {
                     <button
                       className={styles.startBtn}
                       type="button"
-                      onClick={() =>
-                        navigate(`/workout/${course._id}`)
-                      }
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const workoutId = course.originalId || course.id || course._id;
+                        window.location.href = `/workout/${workoutId}`;
+                      }}
                     >
                       Начать тренировку
                     </button>

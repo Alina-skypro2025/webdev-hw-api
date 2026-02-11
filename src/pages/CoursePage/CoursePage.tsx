@@ -69,7 +69,6 @@ const COURSE_VIEW: Record<CourseId, CourseView> = {
       "помогают противостоять стрессам",
     ],
   },
-
   stretching: {
     id: "stretching",
     title: "Стретчинг",
@@ -89,7 +88,6 @@ const COURSE_VIEW: Record<CourseId, CourseView> = {
     promoTitle: "Начните путь\nк новому телу",
     promoBullets: ["улучшение гибкости", "легкость в теле", "поддержка суставов", "снятие напряжения"],
   },
-
   fitness: {
     id: "fitness",
     title: "Фитнес",
@@ -109,7 +107,6 @@ const COURSE_VIEW: Record<CourseId, CourseView> = {
     promoTitle: "Начните путь\nк новому телу",
     promoBullets: ["тонус мышц", "выносливость", "энергия", "сжигание калорий"],
   },
-
   stepaerobics: {
     id: "stepaerobics",
     title: "Степ-аэробика",
@@ -129,7 +126,6 @@ const COURSE_VIEW: Record<CourseId, CourseView> = {
     promoTitle: "Начните путь\nк новому телу",
     promoBullets: ["кардио-нагрузка", "координация", "ноги и ягодицы", "энергия"],
   },
-
   bodyflex: {
     id: "bodyflex",
     title: "Бодифлекс",
@@ -151,15 +147,14 @@ const COURSE_VIEW: Record<CourseId, CourseView> = {
   },
 };
 
-function titleToSlug(title: string): CourseId | null {
-  const t = title.trim().toLowerCase();
-  if (t === "йога") return "yoga";
-  if (t === "стретчинг") return "stretching";
-  if (t === "фитнес") return "fitness";
-  if (t === "степ-аэробика" || t === "степ аэробика") return "stepaerobics";
-  if (t === "бодифлекс") return "bodyflex";
-  return null;
-}
+
+const API_ID_TO_SLUG: Record<string, CourseId> = {
+  "6i67sm": "stepaerobics",
+  "ab1c3f": "yoga",
+  "kfpq8e": "stretching",
+  "q02a6i": "bodyflex",
+  "ypox9r": "fitness"
+};
 
 type HeroCSSVars = CSSProperties & {
   ["--hero-bg"]?: string;
@@ -174,50 +169,55 @@ export function CoursePage() {
   const user = getUser();
   const userKey = user?.email || user?.login || user?.username || "";
 
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loadingMap, setLoadingMap] = useState(true);
+  
+  const [loading, setLoading] = useState(true);
   const [justAdded, setJustAdded] = useState(false);
 
   useEffect(() => {
-    getCourses()
-      .then((data) => setCourses(data))
-      .catch(() => setCourses([]))
-      .finally(() => setLoadingMap(false));
+    
+    setLoading(false);
   }, []);
 
-  const resolvedCourseId = useMemo<CourseId | null>(() => {
+  
+  const displayId = useMemo<CourseId | null>(() => {
     if (!courseId) return null;
+    
+    
     if (courseId in COURSE_VIEW) return courseId as CourseId;
-
-    const byDb = courses.find((c) => c._id === courseId);
-    if (byDb) return titleToSlug(byDb.title);
-
+    
+    
+    if (courseId in API_ID_TO_SLUG) {
+      return API_ID_TO_SLUG[courseId];
+    }
+    
     return null;
-  }, [courseId, courses]);
+  }, [courseId]);
 
+  
   const alreadyAdded = useMemo(() => {
-    if (!userKey || !resolvedCourseId) return false;
+    if (!userKey || !courseId) return false;
     const ids = getMyCourseIds(userKey);
-    return ids.includes(resolvedCourseId);
-  }, [userKey, resolvedCourseId]);
+    return ids.includes(courseId);
+  }, [userKey, courseId]);
 
   useEffect(() => {
     setJustAdded(false);
-  }, [resolvedCourseId]);
+  }, [courseId]);
 
   function onAddCourse() {
     if (!userKey) {
       navigate("/login?mode=login", { state: { backgroundLocation: location } });
       return;
     }
-    if (!resolvedCourseId) return;
+    if (!courseId) return;
     if (alreadyAdded) return;
 
-    addMyCourse(userKey, resolvedCourseId);
+    
+    addMyCourse(userKey, courseId);
     setJustAdded(true);
   }
 
-  if (!resolvedCourseId && !loadingMap) {
+  if (!displayId && !loading) {
     return (
       <div className={styles.page}>
         <div className={styles.container}>
@@ -232,7 +232,7 @@ export function CoursePage() {
     );
   }
 
-  if (!resolvedCourseId) {
+  if (!displayId || loading) {
     return (
       <div className={styles.page}>
         <div className={styles.container} style={{ paddingTop: 60 }}>
@@ -242,7 +242,7 @@ export function CoursePage() {
     );
   }
 
-  const view = COURSE_VIEW[resolvedCourseId];
+  const view = COURSE_VIEW[displayId];
 
   const btnText = !userKey
     ? "Войдите, чтобы добавить курс"
