@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import styles from "./CoursePage.module.css";
 
-import { getCourses, type Course } from "../../shared/api/courses";
+import { getCourses, addUserCourse, type Course } from "../../shared/api/courses";
 
 import yogaPage from "../../shared/assets/courses/Yogapage.jpg";
 import stretchingPage from "../../shared/assets/courses/Stretching.jpg";
@@ -13,7 +13,8 @@ import bodyflexPage from "../../shared/assets/courses/Bodyflex.jpg";
 import manImg from "../../shared/assets/courses/men.jpg";
 
 import { getUser } from "../../shared/lib/auth";
-import { addMyCourse, getMyCourseIds } from "../../shared/lib/myCourses";
+
+const STORAGE_KEY = "sky_user_courses";
 
 type CourseId = "yoga" | "stretching" | "fitness" | "stepaerobics" | "bodyflex";
 
@@ -45,10 +46,7 @@ const COURSE_VIEW: Record<CourseId, CourseView> = {
     reasonsTitle: "Подойдет для вас, если:",
     reasons: [
       { n: 1, text: "Давно хотели попробовать йогу, но не решались начать" },
-      {
-        n: 2,
-        text: "Хотите укрепить позвоночник, избавиться от болей в спине и суставах",
-      },
+      { n: 2, text: "Хотите укрепить позвоночник, избавиться от болей в спине и суставах" },
       { n: 3, text: "Ищете активность, полезную для тела и души" },
     ],
     directionsTitle: "Направления",
@@ -147,7 +145,6 @@ const COURSE_VIEW: Record<CourseId, CourseView> = {
   },
 };
 
-
 const API_ID_TO_SLUG: Record<string, CourseId> = {
   "6i67sm": "stepaerobics",
   "ab1c3f": "yoga",
@@ -155,6 +152,21 @@ const API_ID_TO_SLUG: Record<string, CourseId> = {
   "q02a6i": "bodyflex",
   "ypox9r": "fitness"
 };
+
+function saveCourseToStorage(courseId: string) {
+  const user = getUser();
+  const userKey = user?.email || user?.login || user?.username;
+  if (!userKey) return;
+  
+  const key = `${STORAGE_KEY}_${userKey}`;
+  const saved = localStorage.getItem(key);
+  const courses = saved ? JSON.parse(saved) : [];
+  
+  if (!courses.includes(courseId)) {
+    courses.push(courseId);
+    localStorage.setItem(key, JSON.stringify(courses));
+  }
+}
 
 type HeroCSSVars = CSSProperties & {
   ["--hero-bg"]?: string;
@@ -169,52 +181,61 @@ export function CoursePage() {
   const user = getUser();
   const userKey = user?.email || user?.login || user?.username || "";
 
-  
-  const [loading, setLoading] = useState(true);
   const [justAdded, setJustAdded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [originalCourseId, setOriginalCourseId] = useState<string | null>(null);
 
   useEffect(() => {
-    
-    setLoading(false);
-  }, []);
-
-  
-  const displayId = useMemo<CourseId | null>(() => {
-    if (!courseId) return null;
-    
-    
-    if (courseId in COURSE_VIEW) return courseId as CourseId;
-    
+    if (!courseId) return;
     
     if (courseId in API_ID_TO_SLUG) {
-      return API_ID_TO_SLUG[courseId];
+      setOriginalCourseId(courseId);
+      setLoading(false);
+      return;
     }
     
+    if (["yoga", "stretching", "fitness", "stepaerobics", "bodyflex"].includes(courseId)) {
+      const found = Object.entries(API_ID_TO_SLUG).find(([, slug]) => slug === courseId)?.[0];
+      setOriginalCourseId(found || courseId);
+      setLoading(false);
+      return;
+    }
+    
+    setOriginalCourseId(courseId);
+    setLoading(false);
+  }, [courseId]);
+
+  const displayId = useMemo<CourseId | null>(() => {
+    if (!courseId) return null;
+    if (courseId in COURSE_VIEW) return courseId as CourseId;
+    if (courseId in API_ID_TO_SLUG) return API_ID_TO_SLUG[courseId];
     return null;
   }, [courseId]);
 
-  
   const alreadyAdded = useMemo(() => {
-    if (!userKey || !courseId) return false;
-    const ids = getMyCourseIds(userKey);
-    return ids.includes(courseId);
-  }, [userKey, courseId]);
+    if (!userKey || !originalCourseId) return false;
+    const key = `${STORAGE_KEY}_${userKey}`;
+    const saved = localStorage.getItem(key);
+    const courses = saved ? JSON.parse(saved) : [];
+    return courses.includes(originalCourseId);
+  }, [userKey, originalCourseId]);
 
-  useEffect(() => {
-    setJustAdded(false);
-  }, [courseId]);
-
-  function onAddCourse() {
+  async function onAddCourse() {
     if (!userKey) {
       navigate("/login?mode=login", { state: { backgroundLocation: location } });
       return;
     }
-    if (!courseId) return;
+    if (!originalCourseId) return;
     if (alreadyAdded) return;
 
-    
-    addMyCourse(userKey, courseId);
-    setJustAdded(true);
+    try {
+      await addUserCourse(originalCourseId);
+      saveCourseToStorage(originalCourseId);
+      setJustAdded(true);
+    } catch {
+      saveCourseToStorage(originalCourseId);
+      setJustAdded(true);
+    }
   }
 
   if (!displayId && !loading) {
@@ -223,9 +244,7 @@ export function CoursePage() {
         <div className={styles.container}>
           <div className={styles.notFound}>
             <div className={styles.notFoundTitle}>Курс не найден</div>
-            <Link to="/" className={styles.backLink}>
-              Назад к списку
-            </Link>
+            <Link to="/" className={styles.backLink}>Назад к списку</Link>
           </div>
         </div>
       </div>
@@ -268,8 +287,7 @@ export function CoursePage() {
         <section className={styles.card}>
           <div className={styles.hero} style={heroStyle}>
             <div className={styles.heroTitle}>{view.title}</div>
-
-            {view.heroImg ? (
+            {view.heroImg && (
               <img
                 className={styles.heroImg}
                 src={view.heroImg}
@@ -279,11 +297,10 @@ export function CoursePage() {
                   objectPosition: view.heroImgPos ?? "right center",
                 }}
               />
-            ) : null}
+            )}
           </div>
 
           <h2 className={styles.sectionTitle}>{view.reasonsTitle}</h2>
-
           <div className={styles.reasons}>
             {view.reasons.map((r) => (
               <div key={r.n} className={styles.reason}>
@@ -294,7 +311,6 @@ export function CoursePage() {
           </div>
 
           <h2 className={styles.sectionTitle}>{view.directionsTitle}</h2>
-
           <div className={styles.directions}>
             {view.directions.map((d) => (
               <div key={d} className={styles.directionItem}>
@@ -309,10 +325,7 @@ export function CoursePage() {
           <div className={styles.bigLeft}>
             <h2 className={styles.bigTitle}>
               {view.promoTitle.split("\n").map((line, idx) => (
-                <span key={idx}>
-                  {line}
-                  <br />
-                </span>
+                <span key={idx}>{line}<br /></span>
               ))}
             </h2>
 

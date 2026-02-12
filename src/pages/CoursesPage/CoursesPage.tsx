@@ -11,7 +11,8 @@ import stepImg from "../../shared/assets/courses/Stepaerobics.jpg";
 import bodyflexImg from "../../shared/assets/courses/Bodyflex.jpg";
 
 import { getUser } from "../../shared/lib/auth";
-import { addMyCourse } from "../../shared/lib/myCourses";
+
+const STORAGE_KEY = "sky_user_courses";
 
 function IconCalendar() {
   return (
@@ -67,109 +68,94 @@ interface AdaptedCourse extends Course {
   _id: string;
   originalId: string;
   title: string;
+  nameEN: string;
+  nameRU: string;
 }
 
 export function CoursesPage() {
   const navigate = useNavigate();
-
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const imagesById = useMemo<Record<string, string>>(
-    () => ({
-      yoga: yogaImg,
-      stretching: stretchingImg,
-      fitness: fitnessImg,
-      stepaerobics: stepImg,
-      bodyflex: bodyflexImg,
-    }),
-    []
-  );
+  const imagesById = useMemo(() => ({
+    yoga: yogaImg,
+    stretching: stretchingImg,
+    fitness: fitnessImg,
+    stepaerobics: stepImg,
+    bodyflex: bodyflexImg,
+  }), []);
 
-  const bgById = useMemo<Record<string, string>>(
-    () => ({
-      yoga: "#FFC400",
-      stretching: "#2D8FD3",
-      fitness: "#F6A019",
-      stepaerobics: "#FF7E69",
-      bodyflex: "#7A3E9D",
-    }),
-    []
-  );
+  const bgById = useMemo(() => ({
+    yoga: "#FFC400",
+    stretching: "#2D8FD3",
+    fitness: "#F6A019",
+    stepaerobics: "#FF7E69",
+    bodyflex: "#7A3E9D",
+  }), []);
 
-  const nameToIdMap = useMemo<Record<string, string>>(
-    () => ({
-      Yoga: "yoga",
-      Stretching: "stretching",
-      Fitness: "fitness",
-      StepAirobic: "stepaerobics",
-      BodyFlex: "bodyflex",
-    }),
-    []
-  );
+  const nameToIdMap = useMemo(() => ({
+    Yoga: "yoga",
+    Stretching: "stretching",
+    Fitness: "fitness",
+    StepAirobic: "stepaerobics",
+    BodyFlex: "bodyflex",
+  }), []);
 
   useEffect(() => {
     getCourses()
-      .then((data) => {
-        setCourses(data);
-      })
-      .catch((e) => setError(e?.message || "Ошибка загрузки"))
+      .then(setCourses)
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const adaptedCourses = useMemo<AdaptedCourse[]>(() => {
+  const adaptedCourses = useMemo(() => {
     return courses
-      .filter((course) => {
-        const mappedId = nameToIdMap[course.nameEN];
-        return mappedId && imagesById[mappedId];
-      })
-      .map((course) => {
-        const mappedId = nameToIdMap[course.nameEN];
-        return {
-          ...course,
-          _id: mappedId,
-          originalId: course._id || course.id,
-          title: course.nameRU,
-        } as AdaptedCourse;
-      });
-  }, [courses, nameToIdMap, imagesById]);
+      .filter(c => nameToIdMap[c.nameEN])
+      .map(c => ({
+        ...c,
+        _id: nameToIdMap[c.nameEN],
+        originalId: c._id,
+        title: c.nameRU,
+      }));
+  }, [courses, nameToIdMap]);
 
   function onPlusClick(e: React.MouseEvent, courseId: string) {
     e.preventDefault();
     e.stopPropagation();
 
     const user = getUser();
-    const userKey = user?.email || user?.login || user?.username || "";
+    const userKey = user?.email || user?.login || user?.username;
     if (!userKey) {
       navigate("/login?mode=login");
       return;
     }
 
-    const course = adaptedCourses.find((c) => c._id === courseId);
+    const course = adaptedCourses.find(c => c._id === courseId);
     const idToSave = course?.originalId || courseId;
     
-    addMyCourse(userKey, idToSave);
+    const key = `${STORAGE_KEY}_${userKey}`;
+    const saved = localStorage.getItem(key);
+    const courses = saved ? JSON.parse(saved) : [];
+    
+    if (!courses.includes(idToSave)) {
+      courses.push(idToSave);
+      localStorage.setItem(key, JSON.stringify(courses));
+    }
+    
     navigate("/profile");
   }
 
   if (loading) return <div className={styles.state}>Загрузка...</div>;
-  if (error) return <div className={`${styles.state} ${styles.stateError}`}>{error}</div>;
 
   return (
     <div className={styles.page}>
       <main className={styles.container}>
         <section className={styles.hero}>
           <h1 className={styles.heroTitle}>
-            Начните заниматься спортом
-            <br />
-            и улучшите качество жизни
+            Начните заниматься спортом<br />и улучшите качество жизни
           </h1>
-
           <div className={styles.heroBubble}>
-            Измени свое
-            <br />
-            тело за полгода!
+            Измени свое<br />тело за полгода!
             <span className={styles.heroBubbleTail} />
           </div>
         </section>
@@ -180,36 +166,26 @@ export function CoursesPage() {
             const bg = bgById[c._id] ?? "#e9ecef";
 
             return (
-              <Link key={c._id} to={`/course/${c.originalId || c._id}`} className={styles.card}>
+              <Link key={c._id} to={`/course/${c.originalId}`} className={styles.card}>
                 <div className={styles.cardImageWrap} style={{ background: bg }}>
-                  {img ? <img src={img} alt={c.title} className={styles.cardImage} /> : null}
-
+                  {img && <img src={img} alt={c.title} className={styles.cardImage} />}
                   <button
                     type="button"
                     className={styles.plus}
-                    aria-label="Добавить курс"
-                    title="Добавить курс"
                     onClick={(e) => onPlusClick(e, c._id)}
-                  >
-                    +
-                  </button>
+                  >+</button>
                 </div>
-
                 <div className={styles.cardBody}>
                   <div className={styles.cardTitle}>{c.title}</div>
-
                   <div className={styles.badges}>
                     <span className={styles.badge}>
-                      <IconCalendar />
-                      {c.durationInDays || 25} дней
+                      <IconCalendar /> {c.durationInDays || 25} дней
                     </span>
                     <span className={styles.badge}>
-                      <IconClock />
-                      {c.dailyDurationInMinutes?.from || 20}-{c.dailyDurationInMinutes?.to || 50} мин/день
+                      <IconClock /> {c.dailyDurationInMinutes?.from || 20}-{c.dailyDurationInMinutes?.to || 50} мин/день
                     </span>
                     <span className={styles.badge}>
-                      <IconSignal />
-                      Сложность
+                      <IconSignal /> Сложность
                     </span>
                   </div>
                 </div>
@@ -219,9 +195,8 @@ export function CoursesPage() {
         </section>
 
         <div className={styles.bottom}>
-          <button
-            className={styles.toTopBtn}
-            type="button"
+          <button 
+            className={styles.toTopBtn} 
             onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           >
             Наверх ↑

@@ -3,6 +3,8 @@ import { useLocation, useNavigate } from "react-router-dom";
 import styles from "./AuthPage.module.css";
 import { setToken, setUser } from "../../shared/lib/auth";
 
+const API_URL = "https://wedev-api.sky.pro/api/fitness/auth";
+
 type Mode = "login" | "register";
 
 function useQueryMode(): Mode {
@@ -17,7 +19,6 @@ export function AuthPage() {
   const initialMode = useQueryMode();
 
   const [mode, setMode] = useState<Mode>(initialMode);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
@@ -28,7 +29,6 @@ export function AuthPage() {
   const [commonError, setCommonError] = useState("");
 
   const isRegister = mode === "register";
-
   const title = useMemo(() => (isRegister ? "Регистрация" : "Вход"), [isRegister]);
 
   function closeModal() {
@@ -71,15 +71,12 @@ export function AuthPage() {
       setEmailError("Введите эл. почту");
       ok = false;
     } else if (!/^\S+@\S+\.\S+$/.test(em)) {
-      setEmailError("Некорректная эл. почта");
+      setEmailError("Введите корректный Email");
       ok = false;
     }
 
     if (!password) {
       setPasswordError("Введите пароль");
-      ok = false;
-    } else if (password.length < 6) {
-      setPasswordError("Пароль должен быть не короче 6 символов");
       ok = false;
     }
 
@@ -101,51 +98,74 @@ export function AuthPage() {
     if (!validate()) return;
 
     try {
-      const em = email.trim().toLowerCase();
-
-     
-      if (!isRegister && em === "sergey.petrov96") {
-        setPasswordError("Пароль введен неверно, попробуйте еще раз.");
-        return;
-      }
-
-      if (isRegister && em === "sergey.petrov96@mail.ru") {
-        setEmailError("Данная почта уже используется. Попробуйте войти.");
-        return;
-      }
-
-     
-      setToken("demo-token");
-      setUser({
-        name: em.split("@")[0],
-        email: email.trim(),
+      setCommonError("");
+      
+      const endpoint = isRegister ? "/register" : "/login";
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: "POST",
+       
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
       });
 
-      closeModal();
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 400 || response.status === 404) {
+          if (data.message?.includes("уже существует")) {
+            setEmailError("Пользователь с таким email уже существует");
+          } else if (data.message?.includes("не найден")) {
+            setEmailError("Пользователь с таким email не найден");
+          } else if (data.message?.includes("Неверный пароль")) {
+            setPasswordError("Неверный пароль");
+          } else if (data.message?.includes("корректный Email")) {
+            setEmailError("Введите корректный Email");
+          } else if (data.message?.includes("спецсимволов") || data.message?.includes("заглавную")) {
+            setPasswordError(data.message);
+          } else {
+            setPasswordError(data.message || "Ошибка авторизации");
+          }
+        } else {
+          setCommonError("Что-то пошло не так. Попробуйте позже.");
+        }
+        return;
+      }
+
+      
+      if (data.token) {
+        setToken(data.token);
+        setUser({
+          email: email.trim(),
+          name: email.trim().split("@")[0],
+        });
+        closeModal();
+      }
+      
+      if (isRegister) {
+        setCommonError("");
+        switchMode("login");
+        setPassword("");
+        setRepeatPassword("");
+      }
+      
     } catch {
-      setCommonError("Что-то пошло не так. Попробуйте позже.");
+      setCommonError("Что-то пошло не так. Попробуйте позже.");
     }
   }
 
-  const primaryText = isRegister ? "Зарегистрироваться" : "Войти";
-  const secondaryText = isRegister ? "Войти" : "Зарегистрироваться";
-
+  const primaryText = isRegister ? "Зарегистрироваться" : "Войти";
+  const secondaryText = isRegister ? "Войти" : "Зарегистрироваться";
   const disabled = !email.trim() || !password || (isRegister ? !repeatPassword : false);
 
   return (
     <div className={styles.overlay} role="dialog" aria-modal="true">
       <button className={styles.backdrop} type="button" onClick={closeModal} aria-label="Закрыть" />
-
       <form className={styles.card} onSubmit={onSubmit} noValidate>
         <div className={styles.logoRow}>
           <span className={styles.logoMark} aria-hidden="true">
-            <svg
-              width="22"
-              height="16"
-              viewBox="0 0 22 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="22" height="16" viewBox="0 0 22 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M3 2L11 8L3 14V2Z" fill="#00C2FF" />
               <path d="M11 2L19 8L11 14V2Z" fill="#B8FF00" />
             </svg>
@@ -154,7 +174,6 @@ export function AuthPage() {
         </div>
 
         <div className={styles.title}>{title}</div>
-
         {commonError ? <div className={styles.commonError}>{commonError}</div> : null}
 
         <div className={styles.fields}>
@@ -191,9 +210,7 @@ export function AuthPage() {
                 type="password"
                 autoComplete="new-password"
               />
-              {repeatPasswordError ? (
-                <div className={styles.errorText}>{repeatPasswordError}</div>
-              ) : null}
+              {repeatPasswordError ? <div className={styles.errorText}>{repeatPasswordError}</div> : null}
             </label>
           ) : null}
         </div>
@@ -202,7 +219,6 @@ export function AuthPage() {
           <button className={styles.primaryBtn} type="submit" disabled={disabled}>
             {primaryText}
           </button>
-
           <button
             className={styles.secondaryBtn}
             type="button"

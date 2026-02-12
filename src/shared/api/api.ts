@@ -1,10 +1,19 @@
 const API_URL = "https://wedev-api.sky.pro";
 
 export async function api<T>(path: string, init?: RequestInit): Promise<T> {
+  const token = localStorage.getItem("sky_token");
+  
+  const headers: HeadersInit = {
+   
+    ...(init?.headers ?? {}),
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const res = await fetch(`${API_URL}${path}`, {
-    headers: {
-      ...(init?.headers ?? {}),
-    },
+    headers,
     ...init,
   });
 

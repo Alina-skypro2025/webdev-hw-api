@@ -3,15 +3,19 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import styles from "./WorkoutPage.module.css";
 
 import { getUser } from "../../shared/lib/auth";
-import { WORKOUTS_BY_COURSE, type WorkoutItem } from "../../shared/lib/workouts";
-import { calcPercent, getWorkoutProgress, setWorkoutProgress, type WorkoutProgress } from "../../shared/lib/workoutProgress";
+import { 
+  getCourseWorkouts, 
+  getWorkoutProgress, 
+  saveWorkoutProgress,
+  type Workout,
+  type WorkoutProgress as APIWorkoutProgress
+} from "../../shared/api/courses";
 
 function clampInt(v: string) {
   const n = Number(v);
   if (!Number.isFinite(n) || n < 0) return 0;
   return Math.floor(n);
 }
-
 
 const API_ID_TO_SLUG: Record<string, string> = {
   "6i67sm": "stepaerobics",
@@ -26,13 +30,10 @@ export function WorkoutPage() {
   const params = useParams<{ workoutId: string }>();
   const courseIdRaw = params.workoutId || "";
   
-  
   const courseSlug = useMemo(() => {
-    
     if (["yoga", "stretching", "fitness", "stepaerobics", "bodyflex"].includes(courseIdRaw)) {
       return courseIdRaw;
     }
-    
     if (courseIdRaw in API_ID_TO_SLUG) {
       return API_ID_TO_SLUG[courseIdRaw];
     }
@@ -42,7 +43,6 @@ export function WorkoutPage() {
   const user = getUser();
   const userKey = user?.email || user?.login || user?.username || "";
 
- 
   useEffect(() => {
     if (!userKey) {
       navigate("/login?mode=login", { replace: true });
@@ -55,43 +55,73 @@ export function WorkoutPage() {
   }, [userKey, courseSlug, navigate]);
 
   
-  const workouts = useMemo(() => {
-    if (!courseSlug) return [];
-    return WORKOUTS_BY_COURSE[courseSlug as keyof typeof WORKOUTS_BY_COURSE] || [];
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    if (!courseSlug) return;
+    
+    
+    const slugToId = Object.entries(API_ID_TO_SLUG).find(([, slug]) => slug === courseSlug)?.[0] || courseSlug;
+    
+    getCourseWorkouts(slugToId)
+      .then((data) => {
+        setWorkouts(data);
+        setLoading(false);
+      })
+      .catch(() => {
+        setWorkouts([]);
+        setLoading(false);
+      });
   }, [courseSlug]);
 
-  
   const [selectedWorkoutId, setSelectedWorkoutId] = useState<string>("");
   const [isSelectOpen, setIsSelectOpen] = useState(true);
 
   useEffect(() => {
     if (workouts.length > 0 && !selectedWorkoutId) {
-      setSelectedWorkoutId(workouts[0].id);
+      setSelectedWorkoutId(workouts[0]._id);
     }
   }, [workouts, selectedWorkoutId]);
 
-  const selectedWorkout: WorkoutItem | null = useMemo(() => {
-    return workouts.find((w) => w.id === selectedWorkoutId) || null;
+  const selectedWorkout: Workout | null = useMemo(() => {
+    return workouts.find((w) => w._id === selectedWorkoutId) || null;
   }, [workouts, selectedWorkoutId]);
 
-  const [progress, setProgress] = useState<WorkoutProgress>({
+  const [progress, setProgress] = useState({
     forwardBends: 0,
     backBends: 0,
     legRaises: 0,
   });
 
-  const percent = useMemo(() => calcPercent(progress), [progress]);
+  const percent = useMemo(() => {
+    const total = progress.forwardBends + progress.backBends + progress.legRaises;
+    const max = 300; 
+    return Math.min(Math.round((total / max) * 100), 100);
+  }, [progress]);
 
   const [isProgressOpen, setIsProgressOpen] = useState(false);
   const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
+  
   useEffect(() => {
     if (!courseSlug || !userKey || !selectedWorkoutId) return;
-    const p = getWorkoutProgress(userKey, courseSlug, selectedWorkoutId);
-    setProgress(p);
+    
+    const slugToId = Object.entries(API_ID_TO_SLUG).find(([, slug]) => slug === courseSlug)?.[0] || courseSlug;
+    
+    getWorkoutProgress(slugToId, selectedWorkoutId)
+      .then((data: APIWorkoutProgress) => {
+        setProgress({
+          forwardBends: data.progressData[0] || 0,
+          backBends: data.progressData[1] || 0,
+          legRaises: data.progressData[2] || 0,
+        });
+      })
+      .catch(() => {
+        
+      });
   }, [courseSlug, userKey, selectedWorkoutId]);
 
-  
   if (!courseSlug) {
     return (
       <div className={styles.page}>
@@ -117,13 +147,25 @@ export function WorkoutPage() {
     setIsProgressOpen(true);
   }
 
-  function saveProgress() {
+  
+  async function saveProgress() {
     if (!courseSlug || !userKey || !selectedWorkoutId) return;
 
-    setWorkoutProgress(userKey, courseSlug, selectedWorkoutId, progress);
-    setIsProgressOpen(false);
-    setIsSuccessOpen(true);
-    window.setTimeout(() => setIsSuccessOpen(false), 1200);
+    const slugToId = Object.entries(API_ID_TO_SLUG).find(([, slug]) => slug === courseSlug)?.[0] || courseSlug;
+
+    try {
+      await saveWorkoutProgress(slugToId, selectedWorkoutId, [
+        progress.forwardBends,
+        progress.backBends,
+        progress.legRaises,
+      ]);
+      
+      setIsProgressOpen(false);
+      setIsSuccessOpen(true);
+      window.setTimeout(() => setIsSuccessOpen(false), 1200);
+    } catch (error) {
+      
+    }
   }
 
   return (
@@ -140,8 +182,8 @@ export function WorkoutPage() {
             {selectedWorkout ? (
               <iframe
                 className={styles.iframe}
-                src={`https://www.youtube.com/embed/${selectedWorkout.youtubeId}`}
-                title={selectedWorkout.title}
+                src={selectedWorkout.video}
+                title={selectedWorkout.name}
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
               />
@@ -153,7 +195,7 @@ export function WorkoutPage() {
 
         <div className={styles.exCard}>
           <div className={styles.exTitle}>
-            Упражнения тренировки {selectedWorkout ? selectedWorkout.id.replace("day-", "") : ""}
+            Упражнения тренировки {selectedWorkout ? selectedWorkout._id.replace("day-", "") : ""}
           </div>
 
           <div className={styles.exGrid}>
@@ -191,18 +233,18 @@ export function WorkoutPage() {
             <div className={styles.modalTitle}>Выберите тренировку</div>
             <div className={styles.list}>
               {workouts.map((w) => {
-                const checked = w.id === selectedWorkoutId;
+                const checked = w._id === selectedWorkoutId;
                 return (
                   <button
-                    key={w.id}
+                    key={w._id}
                     type="button"
                     className={`${styles.listItem} ${checked ? styles.listItemActive : ""}`}
-                    onClick={() => setSelectedWorkoutId(w.id)}
+                    onClick={() => setSelectedWorkoutId(w._id)}
                   >
                     <span className={`${styles.radio} ${checked ? styles.radioOn : ""}`} />
                     <span className={styles.listTexts}>
-                      <span className={styles.listMain}>{w.title}</span>
-                      <span className={styles.listSub}>{w.subtitle}</span>
+                      <span className={styles.listMain}>{w.name}</span>
+                      <span className={styles.listSub}>Упражнения: {w.exercises?.length || 0}</span>
                     </span>
                   </button>
                 );
@@ -259,7 +301,6 @@ export function WorkoutPage() {
           </div>
         </div>
       ) : null}
-
       {isSuccessOpen ? (
         <div className={styles.overlay} role="dialog" aria-modal="true">
           <div className={styles.success}>
